@@ -5,6 +5,7 @@ import urlparse
 
 import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
 
 
 class NewsDownloader(object):
@@ -45,5 +46,24 @@ class BBCNewsDownloader(NewsDownloader):
             urllib.urlretrieve(article_full_url, article_download_destination)
 
 
+class BenGurionAirportScheduleDownloader(NewsDownloader):
+    def __init__(self, download_directory):
+        self.download_directory = download_directory
+
+    def get_page_source(self, page):
+        web_driver = webdriver.Chrome('/Users/tamir/Downloads/chromedriver')
+        web_driver.get(page)
+        source = web_driver.page_source
+        return source
+
+    def download_news(self):
+        download_base_url = 'http://www.iaa.gov.il/he-IL/airports/BenGurion/Pages/OnlineFlights.aspx'
+        soup = BeautifulSoup(self.get_page_source(download_base_url), 'html.parser')
+        flights_table = soup.find(name='table', id='board1')
+        for tr in flights_table.find_all('tr'):
+            print tr
+
+
 if __name__ == '__main__':
-    BBCNewsDownloader('/Users/tamir/temp').download_news()
+    # BBCNewsDownloader('/Users/tamir/temp').download_news()
+    BenGurionAirportScheduleDownloader('/Users/tamir/temp').download_news()
