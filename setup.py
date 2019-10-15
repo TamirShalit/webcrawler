@@ -8,5 +8,5 @@ setup(
     extras_require={'test': ['pytest']},
     author='Tamir Shalit',
     author_email='shalit.tamir@gmail.com',
-    description='Download, extraction and analysis of articles from '
+    description='Download, extraction and analysis of data from news websites'
 )
