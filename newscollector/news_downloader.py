@@ -10,12 +10,13 @@ import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
+from newscollector import common
+
 
 class NewsDownloader(object):
     """Downloads articles or other data from news website."""
     __metaclass__ = abc.ABCMeta
 
-    WEB_SCRAPPING_PARSER = 'html.parser'
     DOWNLOAD_URL = ''
 
     def __init__(self, download_directory):
@@ -54,7 +55,7 @@ class BBCNewsDownloader(NewsDownloader):
     DOWNLOAD_URL = 'http://bbc.com'
 
     def download_news(self):
-        soup = BeautifulSoup(self.load_page_source(), self.WEB_SCRAPPING_PARSER)
+        soup = BeautifulSoup(self.load_page_source(), common.WEB_SCRAPPING_PARSER)
         all_article_tags = soup.find_all(name='a', attrs={'class': 'block-link__overlay-link'})
         for tag in all_article_tags:
             self._download_article_from_html_tag(tag)
@@ -126,7 +127,7 @@ class BenGurionAirportScheduleDownloader(SeleniumNewsDownloader):
     def _extract_schedule_update_time(self, page_source):
         current_datetime = datetime.datetime.now()
         year, month, day = current_datetime.year, current_datetime.month, current_datetime.day
-        soup = BeautifulSoup(page_source, self.WEB_SCRAPPING_PARSER)
+        soup = BeautifulSoup(page_source, common.WEB_SCRAPPING_PARSER)
         last_update_tag = soup.find(id='ctl00_rptIncomingFlights_ctl00_pInformationStatusMessage')
         last_update_hour_string = re.search(self._HOUR_REGEX, last_update_tag.text).group(0)
         hour, seconds = map(int, last_update_hour_string.split(':'))
