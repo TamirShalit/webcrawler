@@ -74,13 +74,13 @@ class BenGurionAirportScheduleDownloader(NewsDownloader):
         super(BenGurionAirportScheduleDownloader, self).__init__(download_directory)
         self._web_driver = driver_type(web_driver_location)
 
-    def get_page_source(self, page):
-        self._web_driver.get(page)
+    def _get_page_source(self):
+        self._web_driver.get(self.DOWNLOAD_URL)
         source = self._web_driver.page_source
         return source
 
     def download_news(self):
-        soup = BeautifulSoup(self.get_page_source(self.DOWNLOAD_URL), self.WEB_SCRAPPING_PARSER)
+        soup = BeautifulSoup(self._get_page_source(), self.WEB_SCRAPPING_PARSER)
         flights_table = soup.find(name='table', id='board1')
         for tr in flights_table.find_all('tr'):
             print tr
