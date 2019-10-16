@@ -8,6 +8,31 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 
 
+class WebPageDownloader(object):
+    """Download a web page from a certain URL."""
+
+    def __init__(self, url, download_destination):
+        self.url = url
+        self.download_destination = download_destination
+
+    def download(self):
+        urllib.urlretrieve(self.url, self.download_destination)
+
+
+class SeleniumWebPageDownloader(WebPageDownloader):
+    """Download a web page from a certain URL using Selenium to bypass security issues."""
+
+    def __init__(self, url, download_destination, webdriver_location):
+        super(SeleniumWebPageDownloader, self).__init__(url, download_destination)
+        self._web_driver = webdriver.Chrome(webdriver_location)
+
+    def download(self):
+        self._web_driver.get(self.url)
+        source = self._web_driver.page_source
+        with open(self.download_destination, 'w') as download_file:
+            download_file.write(source)
+
+
 class NewsDownloader(object):
     """Downloads articles or other data from news website."""
     __metaclass__ = abc.ABCMeta
