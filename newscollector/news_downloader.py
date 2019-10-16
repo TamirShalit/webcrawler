@@ -20,6 +20,7 @@ class NewsDownloader(object):
 
     @abc.abstractmethod
     def download_news(self):
+        """Download news from the website to the download directory."""
         pass
 
 
@@ -32,9 +33,12 @@ class BBCNewsDownloader(NewsDownloader):
         soup = BeautifulSoup(response.text, self.WEB_SCRAPPING_PARSER)
         all_article_tags = soup.find_all(name='a', attrs={'class': 'block-link__overlay-link'})
         for tag in all_article_tags:
-            self._download_article_from_a_tag(tag)
+            self._download_article_from_html_tag(tag)
 
-    def _download_article_from_a_tag(self, article_tag):
+    def _download_article_from_html_tag(self, article_tag):
+        """
+        :param bs4.Tag article_tag: BeatifulSoup tag with link to the article.
+        """
         article_url = article_tag['href']
         if article_url.endswith('/'):
             article_url = article_url[:-1]
@@ -56,9 +60,17 @@ class BBCNewsDownloader(NewsDownloader):
 
 
 class BenGurionAirportScheduleDownloader(NewsDownloader):
+    """
+    Downloads real-time schedule of flights from Ben-Gurion airport.
+    Uses Selenium to bypass security issues.
+    """
     DOWNLOAD_URL = 'http://www.iaa.gov.il/he-IL/airports/BenGurion/Pages/OnlineFlights.aspx'
 
     def __init__(self, download_directory, web_driver_location, driver_type=webdriver.Chrome):
+        """
+        :param web_driver_location: Location of the web-driver file.
+        :param driver_type: Class of Selenium web-driver to use.
+        """
         super(BenGurionAirportScheduleDownloader, self).__init__(download_directory)
         self._web_driver = driver_type(web_driver_location)
 
