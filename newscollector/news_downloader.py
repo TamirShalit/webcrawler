@@ -23,14 +23,16 @@ class NewsDownloader(object):
         """Download news from the website to the download directory."""
         pass
 
+    def _get_page_source(self):
+        return requests.get(self.DOWNLOAD_URL).text
+
 
 class BBCNewsDownloader(NewsDownloader):
     """Downloads articles from BBC main web page and saves them as HTML files."""
     DOWNLOAD_URL = 'http://bbc.com'
 
     def download_news(self):
-        response = requests.get(self.DOWNLOAD_URL)
-        soup = BeautifulSoup(response.text, self.WEB_SCRAPPING_PARSER)
+        soup = BeautifulSoup(self._get_page_source(), self.WEB_SCRAPPING_PARSER)
         all_article_tags = soup.find_all(name='a', attrs={'class': 'block-link__overlay-link'})
         for tag in all_article_tags:
             self._download_article_from_html_tag(tag)
@@ -59,25 +61,29 @@ class BBCNewsDownloader(NewsDownloader):
         return article_full_url
 
 
-class BenGurionAirportScheduleDownloader(NewsDownloader):
-    """
-    Downloads real-time schedule of flights from Ben-Gurion airport.
-    Uses Selenium to bypass security issues.
-    """
-    DOWNLOAD_URL = 'http://www.iaa.gov.il/he-IL/airports/BenGurion/Pages/OnlineFlights.aspx'
+class SeleniumNewsDownloader(NewsDownloader):
+    """Downloads the news using Selenium to bypass security issues."""
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, download_directory, web_driver_location, driver_type=webdriver.Chrome):
         """
         :param web_driver_location: Location of the web-driver file.
         :param driver_type: Class of Selenium web-driver to use.
         """
-        super(BenGurionAirportScheduleDownloader, self).__init__(download_directory)
+        super(SeleniumNewsDownloader, self).__init__(download_directory)
         self._web_driver = driver_type(web_driver_location)
 
     def _get_page_source(self):
         self._web_driver.get(self.DOWNLOAD_URL)
         source = self._web_driver.page_source
         return source
+
+
+class BenGurionAirportScheduleDownloader(SeleniumNewsDownloader):
+    """
+    Downloads real-time schedule of flights from Ben-Gurion airport.
+    """
+    DOWNLOAD_URL = 'http://www.iaa.gov.il/he-IL/airports/BenGurion/Pages/OnlineFlights.aspx'
 
     def download_news(self):
         soup = BeautifulSoup(self._get_page_source(), self.WEB_SCRAPPING_PARSER)
