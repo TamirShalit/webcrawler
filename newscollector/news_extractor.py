@@ -7,6 +7,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 from newscollector import common
+from newscollector.raw_news import BBCRawArticle
 
 FlightData = collections.namedtuple('FlightData',
                                     ['number', 'flight_from', 'planned_time', 'updated_time',
@@ -35,8 +36,10 @@ class NewsExtractor(object):
 
     @abc.abstractmethod
     def extract_raw_news(self):
-        """Extract raw data from news file and write to respective output file/directory."""
-        pass
+        """
+        Extract raw news from news file.
+        :rtype: list[newscollector.raw_news.RawNews]
+        """
 
 
 class BBCNewsExtractor(NewsExtractor):
@@ -47,13 +50,14 @@ class BBCNewsExtractor(NewsExtractor):
     def extract_raw_news(self):
         soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)
         story_body = soup.find(name='div', attrs={'class': 'story-body'})
-        content_tags = story_body.find_all(name=['h1', 'h2', 'p'],
-                                           attrs={'aria-hidden': '',
-                                                  'class': self._is_class_name_of_article_content})
-        content_lines = [tag.text + '\n' for tag in content_tags]
-        output_filename = os.path.splitext(os.path.basename(self.news_file_path))[0] + '.txt'
-        with open(os.path.join(self.output_directory, output_filename), 'w') as output_file:
-            output_file.writelines(content_lines)
+        article_header = story_body.find(name='h1', attrs={'class': 'story-body__h1'}).text
+        article_introduction = story_body.find(name='p',
+                                               attrs={'class': 'story-body__introduction'}).text
+        article_paragraph_tags = story_body.find_all(
+            name=['p', 'h2'],
+            attrs={'aria-hidden': '', 'class': self._is_class_name_of_article_content})
+        article_paragraphs = [tag.text for tag in article_paragraph_tags]
+        return [BBCRawArticle(article_header, article_introduction, article_paragraphs)]
 
 
 class BenGurionAirportScheduleExtractor(NewsExtractor):
@@ -87,9 +91,12 @@ class BenGurionAirportScheduleExtractor(NewsExtractor):
 
 
 if __name__ == '__main__':
-    BBCNewsExtractor(
+    raw_news = BBCNewsExtractor(
         "/Users/tamir/PycharmProjects/newscollector/newscollector/Why won't Democrats vote to authorise impeachment_ - BBC News.htm",
-        '/Users/tamir/PycharmProjects/newscollector/newscollector/output').extract_raw_news()
+        '/Users/tamir/PycharmProjects/newscollector/newscollector/output').extract_raw_news()[0]
+    print raw_news.header
+    print raw_news.introduction
+    print raw_news.paragraphs
     # BenGurionAirportScheduleExtractor(
     #     '/Users/tamir/PycharmProjects/newscollector/newscollector/flights_schedule_2019-10-16 23:48:13.490611.html',
     #     '/Users/tamir/PycharmProjects/newscollector/newscollector/output').extract_raw_news()
