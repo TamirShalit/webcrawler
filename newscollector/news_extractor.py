@@ -17,9 +17,10 @@ class NewsExtractor(object):
     """Extracts relevant raw data from downloaded news files."""
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, news_file_path):
+    def __init__(self, news_file_path, output_directory):
         self.news_file_path = news_file_path
         self._news_file_content = ''
+        self.output_directory = output_directory
 
     @property
     def news_file_content(self):
@@ -38,19 +39,29 @@ class NewsExtractor(object):
         pass
 
 
-# class BBCNewsExtractor(NewsExtractor):
-#     def extract_raw_news(self, news_file):
+class BBCNewsExtractor(NewsExtractor):
+    @staticmethod
+    def _is_class_name_of_article_content(html_tag_class_name):
+        return html_tag_class_name is None or 'twite' not in html_tag_class_name
+
+    def extract_raw_news(self):
+        soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)
+        story_body = soup.find(name='div', attrs={'class': 'story-body'})
+        content_tags = story_body.find_all(name=['h1', 'h2', 'p'],
+                                           attrs={'aria-hidden': '',
+                                                  'class': self._is_class_name_of_article_content})
+        content_lines = [tag.text + '\n' for tag in content_tags]
+        output_filename = os.path.splitext(os.path.basename(self.news_file_path))[0] + '.txt'
+        with open(os.path.join(self.output_directory, output_filename), 'w') as output_file:
+            output_file.writelines(content_lines)
 
 
 class BenGurionAirportScheduleExtractor(NewsExtractor):
-    def __init__(self, news_file_path, output_directory):
-        super(BenGurionAirportScheduleExtractor, self).__init__(news_file_path)
-        self.output_directory = output_directory
 
     def extract_raw_news(self):
         soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)
         all_flights_tags = soup.find_all(name='tr', attrs={
-            'class': lambda class_name: class_name in ('odd', 'even')})[1:]
+            'class': ['odd', 'even']})[1:]
         for tag in all_flights_tags:
             flight_data = self._extract_flight_data(tag)
 
@@ -76,6 +87,9 @@ class BenGurionAirportScheduleExtractor(NewsExtractor):
 
 
 if __name__ == '__main__':
-    BenGurionAirportScheduleExtractor(
-        '/Users/tamir/PycharmProjects/newscollector/newscollector/flights_schedule_2019-10-16 23:48:13.490611.html',
+    BBCNewsExtractor(
+        "/Users/tamir/PycharmProjects/newscollector/newscollector/Why won't Democrats vote to authorise impeachment_ - BBC News.htm",
         '/Users/tamir/PycharmProjects/newscollector/newscollector/output').extract_raw_news()
+    # BenGurionAirportScheduleExtractor(
+    #     '/Users/tamir/PycharmProjects/newscollector/newscollector/flights_schedule_2019-10-16 23:48:13.490611.html',
+    #     '/Users/tamir/PycharmProjects/newscollector/newscollector/output').extract_raw_news()
