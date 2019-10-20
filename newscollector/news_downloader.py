@@ -133,15 +133,16 @@ class BenGurionAirportScheduleDownloader(SeleniumNewsDownloader):
         hour, seconds = map(int, last_update_hour_string.split(':'))
         return datetime.datetime(year, month, day, hour, seconds)
 
-    @staticmethod
-    def _write_schedule_file(page_source):
+    def _write_schedule_file(self, page_source):
         download_file_name = 'flights_schedule_{current_time}.html'.format(
             current_time=datetime.datetime.now())
-        with open(download_file_name, 'w') as download_file:
+        download_file_path = os.path.join(self.download_directory, download_file_name)
+        with open(download_file_path, 'w') as download_file:
             download_file.write(page_source.encode('utf-8'))
 
 
 if __name__ == '__main__':
     # BBCNewsDownloader('/Users/tamir/temp').download_news()
-    BenGurionAirportScheduleDownloader('/Users/tamir/temp',
-                                       '/Users/tamir/Downloads/chromedriver').download_news_perpetually()
+    BenGurionAirportScheduleDownloader(
+        '/Users/tamir/PycharmProjects/newscollector/newscollector/output',
+        '/Users/tamir/Downloads/chromedriver').download_news_perpetually()
