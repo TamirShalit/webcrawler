@@ -24,6 +24,28 @@ class RawNews(object):
         return [cls.load(file_path) for file_path in all_file_paths]
 
 
+class JsonRawNews(RawNews):
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def to_dict(self):
+        pass
+
+    @classmethod
+    @abc.abstractmethod
+    def from_dict(cls, dictionary):
+        pass
+
+    def dump(self, file_path):
+        with open(file_path, 'w') as output_file:
+            json.dump(self.to_dict(), output_file, indent=2)
+
+    @classmethod
+    def load(cls, file_path):
+        with open(file_path) as json_file:
+            return cls.from_dict(json.load(json_file))
+
+
 class BBCRawArticle(RawNews):
     END_OF_HEADER = '\n--------END-OF-HEADER----------\n'
     END_OF_INTRODUCTION = '\n--------END-OF-INTRODUCTION----------\n'
@@ -71,7 +93,7 @@ class BBCRawArticle(RawNews):
         return '\n'.join(all_text_chapters)
 
 
-class BenGurionFlightSchedule(RawNews):
+class BenGurionFlightSchedule(JsonRawNews):
     COMPANY_FIELD = 'company'
     FLIGHT_NUMBER_FIELD = 'number'
     FLIGHT_FROM_FIELD = 'from'
@@ -89,15 +111,6 @@ class BenGurionFlightSchedule(RawNews):
         self._updated_time = updated_time
         self._terminal = terminal
         self._status = status
-
-    def dump(self, file_path):
-        with open(file_path, 'w') as output_file:
-            json.dump(self.to_dict(), output_file, indent=2)
-
-    @classmethod
-    def load(cls, file_path):
-        with open(file_path) as flight_schedule_file:
-            return cls.from_dict(json.load(flight_schedule_file))
 
     @property
     def company(self):
@@ -136,8 +149,8 @@ class BenGurionFlightSchedule(RawNews):
                 self.STATUS_FIELD: self.status}
 
     @classmethod
-    def from_dict(cls, flight_dict):
-        return cls(flight_dict[cls.COMPANY_FIELD], flight_dict[cls.FLIGHT_NUMBER_FIELD],
-                   flight_dict[cls.FLIGHT_FROM_FIELD],
-                   flight_dict[cls.PLANNED_TIME_FIELD], flight_dict[cls.UPDATED_TIME_FIELD],
-                   flight_dict[cls.TERMINAL_FIELD], flight_dict[cls.STATUS_FIELD])
+    def from_dict(cls, dictionary):
+        return cls(dictionary[cls.COMPANY_FIELD], dictionary[cls.FLIGHT_NUMBER_FIELD],
+                   dictionary[cls.FLIGHT_FROM_FIELD],
+                   dictionary[cls.PLANNED_TIME_FIELD], dictionary[cls.UPDATED_TIME_FIELD],
+                   dictionary[cls.TERMINAL_FIELD], dictionary[cls.STATUS_FIELD])
