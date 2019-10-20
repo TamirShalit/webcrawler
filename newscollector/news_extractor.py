@@ -63,8 +63,9 @@ class BenGurionAirportScheduleExtractor(NewsExtractor):
         all_flights_tags = soup.find_all(name='tr', attrs={'class': ['odd', 'even']})[1:]
         return [self._extract_flight_schedule(tag) for tag in all_flights_tags]
 
-    @staticmethod
-    def _extract_flight_schedule(flight_html_row):
+    @classmethod
+    def _extract_flight_schedule(cls, flight_html_row):
+        flight_company = cls._extract_flight_company(flight_html_row)
         flight_number = flight_html_row.find(name='td', attrs={'class': 'FlightNum'}).text.strip()
         flight_from = flight_html_row.find(name='td', attrs={'class': 'FlightFrom'}).find(
             'span').text.strip()
@@ -72,11 +73,20 @@ class BenGurionAirportScheduleExtractor(NewsExtractor):
         updated_time = flight_html_row.find(name='td', attrs={'class': 'finalTime'}).text.strip()
         local_terminal = int(flight_html_row.find(name='td', attrs={'class': 'localTerminal'}).text)
         status = flight_html_row.find(name='td', attrs={'class': 'status'}).find('div').text.strip()
-        return BenGurionFlightSchedule(flight_number, flight_from, planned_time, updated_time,
+        return BenGurionFlightSchedule(flight_company, flight_number, flight_from, planned_time,
+                                       updated_time,
                                        local_terminal, status)
+
+    @staticmethod
+    def _extract_flight_company(flight_html_row):
+        flight_company_element_tag = flight_html_row.find(name='td', attrs={'class': 'flightIcons'})
+        logo_image_tag = flight_html_row.find(name='img', attrs={'class': 'logoImg'})
+        if logo_image_tag:
+            return logo_image_tag['alt'].strip()
+        return flight_company_element_tag.find(name='span', attrs={'class': 'noIcon'}).text.strip()
 
 
 if __name__ == '__main__':
     all_schedules = BenGurionAirportScheduleExtractor(
-        '/Users/tamir/PycharmProjects/newscollector/newscollector/flights_schedule_2019-10-16 23:48:13.490611.html').extract_raw_news()
+        '/Users/tamir/PycharmProjects/newscollector/newscollector/output/flights_schedule_2019-10-20 23:06:28.387212.html').extract_raw_news()
     print all_schedules[0].to_dict()

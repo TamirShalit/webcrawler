@@ -64,6 +64,7 @@ class BBCRawArticle(RawNews):
 
 
 class BenGurionFlightSchedule(RawNews):
+    COMPANY_FIELD = 'company'
     FLIGHT_NUMBER_FIELD = 'number'
     FLIGHT_FROM_FIELD = 'from'
     PLANNED_TIME_FIELD = 'planned_time'
@@ -71,7 +72,9 @@ class BenGurionFlightSchedule(RawNews):
     TERMINAL_FIELD = 'terminal'
     STATUS_FIELD = 'status'
 
-    def __init__(self, flight_number, flight_from, planned_time, updated_time, terminal, status):
+    def __init__(self, company, flight_number, flight_from, planned_time, updated_time, terminal,
+                 status):
+        self._company = company
         self._flight_number = flight_number
         self._flight_from = flight_from
         self._planned_time = planned_time
@@ -87,6 +90,10 @@ class BenGurionFlightSchedule(RawNews):
     def load(cls, file_path):
         with open(file_path) as flight_schedule_file:
             return cls.from_dict(json.load(flight_schedule_file))
+
+    @property
+    def company(self):
+        return self._company
 
     @property
     def flight_number(self):
@@ -113,7 +120,8 @@ class BenGurionFlightSchedule(RawNews):
         return self._status
 
     def to_dict(self):
-        return {self.FLIGHT_NUMBER_FIELD: self.flight_number,
+        return {self.COMPANY_FIELD: self.company,
+                self.FLIGHT_NUMBER_FIELD: self.flight_number,
                 self.FLIGHT_FROM_FIELD: self.flight_from,
                 self.PLANNED_TIME_FIELD: self.planned_time,
                 self.UPDATED_TIME_FIELD: self.updated_time,
@@ -121,6 +129,7 @@ class BenGurionFlightSchedule(RawNews):
 
     @classmethod
     def from_dict(cls, flight_dict):
-        return cls(flight_dict[cls.FLIGHT_NUMBER_FIELD], flight_dict[cls.FLIGHT_FROM_FIELD],
+        return cls(flight_dict[cls.COMPANY_FIELD], flight_dict[cls.FLIGHT_NUMBER_FIELD],
+                   flight_dict[cls.FLIGHT_FROM_FIELD],
                    flight_dict[cls.PLANNED_TIME_FIELD], flight_dict[cls.UPDATED_TIME_FIELD],
                    flight_dict[cls.TERMINAL_FIELD], flight_dict[cls.STATUS_FIELD])
