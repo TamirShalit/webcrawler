@@ -62,6 +62,14 @@ class BBCRawArticle(RawNews):
     def paragraphs(self):
         return self._paragraphs
 
+    def to_text(self):
+        """
+        Convert news to a raw text for the use of analyzers.
+        :rtype: basestring
+        """
+        all_text_chapters = [self.header, self.introduction] + self.paragraphs
+        return '\n'.join(all_text_chapters)
+
 
 class BenGurionFlightSchedule(RawNews):
     COMPANY_FIELD = 'company'
