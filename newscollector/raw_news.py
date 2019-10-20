@@ -29,7 +29,9 @@ class JsonRawNews(RawNews):
 
     @abc.abstractmethod
     def to_dict(self):
-        pass
+        """
+        :rtype: dict
+        """
 
     @classmethod
     @abc.abstractmethod
@@ -87,7 +89,7 @@ class BBCRawArticle(RawNews):
     def to_text(self):
         """
         Convert news to a raw text for the use of analyzers.
-        :rtype: basestring
+        :rtype: str
         """
         all_text_chapters = [self.header, self.introduction] + self.paragraphs
         return '\n'.join(all_text_chapters)
