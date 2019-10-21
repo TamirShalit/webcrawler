@@ -9,12 +9,16 @@ import datetime
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.support.wait import WebDriverWait
 
 from newscollector import common
 
 
 class NewsDownloader(object):
-    """Downloads articles or other data from news website."""
+    """Downloads data from news website to a directory."""
     __metaclass__ = abc.ABCMeta
 
     DOWNLOAD_URL = ''
@@ -25,7 +29,6 @@ class NewsDownloader(object):
     @abc.abstractmethod
     def download_news(self):
         """Download news from the website to the download directory."""
-        pass
 
     def load_page_source(self):
         return requests.get(self.DOWNLOAD_URL).text
@@ -41,7 +44,38 @@ class SeleniumNewsDownloader(NewsDownloader):
         :param driver_type: Class of Selenium web-driver to use.
         """
         super(SeleniumNewsDownloader, self).__init__(download_directory)
-        self._web_driver = driver_type(web_driver_location)
+        self._driver_type = driver_type
+        self._web_driver_location = web_driver_location
+        self._web_driver = None
+
+    def ensure_page_is_open(self):
+        if not self.is_page_open:
+            if self._web_driver is not None:
+                # Clean everything left from last driver session.
+                self._web_driver.quit()
+            self._web_driver = self._driver_type(self._web_driver_location)
+            self._web_driver.get(self.DOWNLOAD_URL)
+
+    def ensure_page_is_closed(self):
+        if self.is_page_open:
+            self._web_driver.quit()
+
+    @property
+    def is_page_open(self):
+        try:
+            return self._web_driver is not None and \
+                   self._web_driver.current_url == self.DOWNLOAD_URL
+        except WebDriverException:
+            return False
+
+    @property
+    def is_driver_open(self):
+        try:
+            # noinspection PyStatementEffect
+            self._web_driver.current_url
+            return True
+        except WebDriverException:
+            return False
 
     def load_page_source(self):
         with self._web_driver:
@@ -55,7 +89,8 @@ class BBCNewsDownloader(NewsDownloader):
     DOWNLOAD_URL = 'http://bbc.com'
 
     def download_news(self):
-        soup = BeautifulSoup(self.load_page_source(), common.WEB_SCRAPPING_PARSER)
+        page_source = requests.get(self.DOWNLOAD_URL)
+        soup = BeautifulSoup(page_source, common.WEB_SCRAPPING_PARSER)
         all_article_tags = soup.find_all(name='a', attrs={'class': 'block-link__overlay-link'})
         for tag in all_article_tags:
             self._download_article_from_html_tag(tag)
@@ -84,58 +119,74 @@ class BBCNewsDownloader(NewsDownloader):
         return article_full_url
 
 
-class BenGurionAirportScheduleDownloader(SeleniumNewsDownloader):
+class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
     """
-    Downloads real-time schedule of flights from Ben-Gurion airport.
+    Downloads real-time schedule of flight landings from Ben-Gurion airport.
     """
     DOWNLOAD_URL = 'http://www.iaa.gov.il/he-IL/airports/BenGurion/Pages/OnlineFlights.aspx'
     SECONDS_BETWEEN_SCHEDULE_UPDATES = 60 * 5
+    SECONDS_TO_WAIT_FOR_SCHEDULE_LOADING = 10
 
     _HOUR_REGEX = r'([01]\d|2[0-3]):[0-5]\d'
 
     def __init__(self, download_directory, web_driver_location, driver_type=webdriver.Chrome):
-        super(BenGurionAirportScheduleDownloader, self).__init__(download_directory,
-                                                                 web_driver_location, driver_type)
-        self._last_update_time = None
-        self._last_loaded_page_source = ''
+        super(FlightLandingScheduleDownloader, self).__init__(download_directory,
+                                                              web_driver_location, driver_type)
+        self._time_of_last_update_downloaded = None
 
     def download_news(self):
-        self._last_loaded_page_source = self.load_page_source()
-        self._write_schedule_file(self._last_loaded_page_source)
+        update_time = self._wait_for_schedule_update_time()
+        page_source = self._web_driver.page_source
+        self._time_of_last_update_downloaded = update_time
+        self._write_schedule_file(page_source)
+        self.ensure_page_is_closed()
+
+    @property
+    def time_of_last_update_downloaded(self):
+        return self._time_of_last_update_downloaded
 
     def download_news_perpetually(self):
-        self.download_news()
-        self._last_update_time = self._extract_schedule_update_time(self._last_loaded_page_source)
-        time_passed_since_last_update = datetime.datetime.now() - self._last_update_time
-        expected_seconds_to_next_update = (datetime.timedelta(
-            seconds=self.SECONDS_BETWEEN_SCHEDULE_UPDATES) -
-                                           time_passed_since_last_update).total_seconds()
-        time.sleep(expected_seconds_to_next_update)
+        if self.time_of_last_update_downloaded is None:
+            self.download_news()
+            time.sleep(self.expected_seconds_to_next_update)
+        self._web_driver.refresh()
+        current_schedule_update_time = self._wait_for_schedule_update_time()
+        while True:
+            while current_schedule_update_time < self.time_of_last_update_downloaded:
+                current_schedule_update_time = self._wait_for_schedule_update_time()
+            self.download_news()
+            time.sleep(self.expected_seconds_to_next_update)
+            current_schedule_update_time = self._wait_for_schedule_update_time()
 
-        while self._should_download_schedule():
-            self._write_schedule_file(self._last_loaded_page_source)
-            time.sleep(self.SECONDS_BETWEEN_SCHEDULE_UPDATES)
+    @property
+    def expected_seconds_to_next_update(self):
+        time_passed_since_last_update = datetime.datetime.now() - \
+                                        self.time_of_last_update_downloaded
+        time_left_for_next_update = (datetime.timedelta(
+            seconds=self.SECONDS_BETWEEN_SCHEDULE_UPDATES) - time_passed_since_last_update)
+        seconds_to_next_update = time_left_for_next_update.total_seconds()
+        return seconds_to_next_update if seconds_to_next_update > 0 else 0
 
-    def _should_download_schedule(self):
-        self._last_loaded_page_source = self.load_page_source()
-        schedule_update_time = self._extract_schedule_update_time(self._last_loaded_page_source)
-        if schedule_update_time > self._last_update_time:
-            self._last_update_time = schedule_update_time
-            return True
-        return False
+    def _wait_for_schedule_update_time(self):
+        self.ensure_page_is_open()
+        try:
+            last_update_message = WebDriverWait(self._web_driver,
+                                                self.SECONDS_TO_WAIT_FOR_SCHEDULE_LOADING).until(
+                expected_conditions.presence_of_element_located(
+                    (By.ID, 'ctl00_rptIncomingFlights_ctl00_pInformationStatusMessage'))).text
+        except TimeoutException:
+            self._web_driver.close()
+            raise
 
-    def _extract_schedule_update_time(self, page_source):
         current_datetime = datetime.datetime.now()
         year, month, day = current_datetime.year, current_datetime.month, current_datetime.day
-        soup = BeautifulSoup(page_source, common.WEB_SCRAPPING_PARSER)
-        last_update_tag = soup.find(id='ctl00_rptIncomingFlights_ctl00_pInformationStatusMessage')
-        last_update_hour_string = re.search(self._HOUR_REGEX, last_update_tag.text).group(0)
+        last_update_hour_string = re.search(self._HOUR_REGEX, last_update_message).group(0)
         hour, seconds = map(int, last_update_hour_string.split(':'))
         return datetime.datetime(year, month, day, hour, seconds)
 
     def _write_schedule_file(self, page_source):
-        download_file_name = 'flights_schedule_{current_time}.html'.format(
-            current_time=datetime.datetime.now())
+        download_file_name = 'flights_schedule_{update_time}.html'.format(
+            update_time=self.time_of_last_update_downloaded)
         download_file_path = os.path.join(self.download_directory, download_file_name)
         with open(download_file_path, 'w') as download_file:
             download_file.write(page_source.encode('utf-8'))
