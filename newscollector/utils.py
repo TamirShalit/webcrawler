@@ -20,3 +20,22 @@ def save_landing_updates_to_directory(landing_updates, directory_path):
                                   flight_number=landing_update.flight_number))
         landing_update_file_path = os.path.join(directory_path, landing_update_filename)
         landing_update.dump(landing_update_file_path)
+
+
+def load_raw_news_from_files(news_type, file_paths):
+    return [news_type.load(file_path) for file_path in file_paths]
+
+
+def get_most_recent_landing_updates(landing_updates):
+    """
+    :param landing_updates:
+    :type landing_updates: list[FlightLandingUpdate]
+    :return:
+    """
+    most_recent_landing_updates = {}
+    for landing_update in landing_updates:
+        saved_landing_update = most_recent_landing_updates.get(landing_update.flight_number)
+        if saved_landing_update is None or \
+                landing_update.schedule_update_time > saved_landing_update.schedule_update_time:
+            most_recent_landing_updates[landing_update.flight_number] = landing_update
+    return most_recent_landing_updates.values()

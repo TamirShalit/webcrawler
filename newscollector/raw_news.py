@@ -39,6 +39,9 @@ class JsonRawNews(RawNews):
         with open(file_path) as json_file:
             return cls.from_dict(json.load(json_file))
 
+    def __str__(self):
+        return str(self.to_dict())
+
 
 class BBCRawArticle(RawNews):
     END_OF_HEADER = '\n--------END-OF-HEADER----------\n'
@@ -151,6 +154,7 @@ class FlightLandingUpdate(JsonRawNews):
                 self.FLIGHT_FROM_FIELD: self.flight_from,
                 self.PLANNED_TIME_FIELD: self.planned_time,
                 self.UPDATED_TIME_FIELD: self.updated_time,
+                self.TERMINAL_FIELD: self.terminal,
                 self.STATUS_FIELD: self.status}
 
     @classmethod
