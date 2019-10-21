@@ -139,10 +139,3 @@ class BenGurionAirportScheduleDownloader(SeleniumNewsDownloader):
         download_file_path = os.path.join(self.download_directory, download_file_name)
         with open(download_file_path, 'w') as download_file:
             download_file.write(page_source.encode('utf-8'))
-
-
-if __name__ == '__main__':
-    # BBCNewsDownloader('/Users/tamir/temp').download_news()
-    BenGurionAirportScheduleDownloader(
-        '/Users/tamir/PycharmProjects/newscollector/newscollector/output',
-        '/Users/tamir/Downloads/chromedriver').download_news_perpetually()

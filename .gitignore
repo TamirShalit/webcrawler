@@ -59,7 +59,6 @@ build
 npm-debug.log
 
 temp
-output/
 
 # Python virtualenv
 venv/

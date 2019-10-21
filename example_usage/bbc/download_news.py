@@ -1,0 +1,4 @@
+from newscollector.news_downloader import BBCNewsDownloader
+
+if __name__ == '__main__':
+    BBCNewsDownloader('./output').download_news()
