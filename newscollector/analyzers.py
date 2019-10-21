@@ -17,19 +17,27 @@ def has_text(raw_news, text, case_sensitive=False):
     if not case_sensitive:
         text = text.lower()
     if hasattr(raw_news, 'to_text'):
-        searched_text = raw_news.to_text()
-        if not case_sensitive:
-            searched_text = searched_text.lower()
-        return text in searched_text
+        return _has_text_in_text_news(raw_news, text, case_sensitive)
     if isinstance(raw_news, JsonRawNews):
-        news_dict = raw_news.to_dict()
-        searched_keys = news_dict.keys()
-        searched_values = news_dict.values()
-        if not case_sensitive:
-            searched_keys = _get_lowered_list(searched_keys)
-            searched_values = _get_lowered_list(searched_values)
-        return text in searched_keys or text in searched_values
+        return _has_text_in_json_news(text, raw_news, case_sensitive)
     raise NotImplementedError('No analyzer for this type of news.')
+
+
+def _has_text_in_text_news(raw_news, text, case_sensitive):
+    searched_text = raw_news.to_text()
+    if not case_sensitive:
+        searched_text = searched_text.lower()
+    return text in searched_text
+
+
+def _has_text_in_json_news(text, raw_news, case_sensitive):
+    news_dict = raw_news.to_dict()
+    searched_keys = news_dict.keys()
+    searched_values = news_dict.values()
+    if not case_sensitive:
+        searched_keys = _get_lowered_list(searched_keys)
+        searched_values = _get_lowered_list(searched_values)
+    return text in searched_keys or text in searched_values
 
 
 def search_for_text_in_news_files(news_type, file_paths, text):
