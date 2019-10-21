@@ -3,12 +3,32 @@ import os
 from newscollector.raw_news import JsonRawNews, RawNews
 
 
-def has_text(raw_news, text):
+def _get_lowered_list(iterable):
+    lowered_list = []
+    for element in iterable:
+        if isinstance(element, basestring):
+            lowered_list.append(element.lower())
+        else:
+            lowered_list.append(element)
+    return lowered_list
+
+
+def has_text(raw_news, text, case_sensitive=False):
+    if not case_sensitive:
+        text = text.lower()
     if hasattr(raw_news, 'to_text'):
-        return text in raw_news.to_text()
+        searched_text = raw_news.to_text()
+        if not case_sensitive:
+            searched_text = searched_text.lower()
+        return text in searched_text
     if isinstance(raw_news, JsonRawNews):
         news_dict = raw_news.to_dict()
-        return text in news_dict.values() or text in news_dict.values()
+        searched_keys = news_dict.keys()
+        searched_values = news_dict.values()
+        if not case_sensitive:
+            searched_keys = _get_lowered_list(searched_keys)
+            searched_values = _get_lowered_list(searched_values)
+        return text in searched_keys or text in searched_values
     raise NotImplementedError('No analyzer for this type of news.')
 
 
