@@ -41,7 +41,9 @@ class NewsExtractor(object):
 class BBCNewsExtractor(NewsExtractor):
     @staticmethod
     def _is_class_name_of_article_content(html_tag_class_name):
-        return html_tag_class_name is None or 'twite' not in html_tag_class_name
+        return html_tag_class_name is None or (
+                html_tag_class_name != 'story-body__introduction' and
+                'twite' not in html_tag_class_name)
 
     def extract_raw_news(self):
         soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)

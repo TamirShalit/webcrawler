@@ -1,6 +1,6 @@
 import os
 
-from newscollector.raw_news import JsonRawNews
+from newscollector.raw_news import JsonRawNews, RawNews
 
 
 def has_text(raw_news, text):
@@ -9,13 +9,14 @@ def has_text(raw_news, text):
     if isinstance(raw_news, JsonRawNews):
         news_dict = raw_news.to_dict()
         return text in news_dict.values() or text in news_dict.values()
+    raise NotImplementedError('No analyzer for this type of news.')
 
 
 def search_for_text_in_news_files(news_type, file_paths, text):
     """
 
     :param news_type:
-    :type news_type: newscollector.raw_news.RawNews
+    :type news_type: RawNews
     :param file_paths:
     :type file_paths: list[str]
     :param text:

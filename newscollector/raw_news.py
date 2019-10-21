@@ -62,8 +62,9 @@ class BBCRawArticle(RawNews):
         with open(file_path, 'a') as output_file:
             output_file.write(self.header + self.END_OF_HEADER)
             output_file.write(self.introduction + self.END_OF_INTRODUCTION)
-            output_file.writelines(
-                [paragraph + self.END_OF_PARAGRAPH for paragraph in self.paragraphs])
+            paragraphs = [paragraph.encode('utf-8') + self.END_OF_PARAGRAPH for paragraph in
+                          self.paragraphs]
+            output_file.writelines(paragraphs)
 
     @classmethod
     def load(cls, file_path):
