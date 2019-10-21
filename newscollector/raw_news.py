@@ -96,7 +96,7 @@ class BBCRawArticle(RawNews):
         return '\n'.join(all_text_chapters)
 
 
-class BenGurionFlightSchedule(JsonRawNews):
+class BenGurionFlightUpdate(JsonRawNews):
     COMPANY_FIELD = 'company'
     FLIGHT_NUMBER_FIELD = 'number'
     FLIGHT_FROM_FIELD = 'from'

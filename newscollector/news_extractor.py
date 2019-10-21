@@ -4,7 +4,7 @@ import collections
 from bs4 import BeautifulSoup
 
 from newscollector import common
-from newscollector.raw_news import BBCRawArticle, BenGurionFlightSchedule
+from newscollector.raw_news import BBCRawArticle, BenGurionFlightUpdate
 
 FlightData = collections.namedtuple('FlightData',
                                     ['number', 'flight_from', 'planned_time', 'updated_time',
@@ -75,9 +75,9 @@ class BenGurionAirportScheduleExtractor(NewsExtractor):
         updated_time = flight_html_row.find(name='td', attrs={'class': 'finalTime'}).text.strip()
         local_terminal = int(flight_html_row.find(name='td', attrs={'class': 'localTerminal'}).text)
         status = flight_html_row.find(name='td', attrs={'class': 'status'}).find('div').text.strip()
-        return BenGurionFlightSchedule(flight_company, flight_number, flight_from, planned_time,
-                                       updated_time,
-                                       local_terminal, status)
+        return BenGurionFlightUpdate(flight_company, flight_number, flight_from, planned_time,
+                                     updated_time,
+                                     local_terminal, status)
 
     @staticmethod
     def _extract_flight_company(flight_html_row):

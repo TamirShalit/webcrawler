@@ -1,9 +1,7 @@
 import os
 
 from newscollector.news_extractor import BBCNewsExtractor
-
-DOWNLOAD_MATERIAL_DIR = './articles'
-RAW_MATERIAL_DIR = './raw_articles'
+from conf import DOWNLOAD_MATERIAL_DIR, RAW_MATERIAL_DIR
 
 
 def main():
