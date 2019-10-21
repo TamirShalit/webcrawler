@@ -29,9 +29,6 @@ class NewsDownloader(object):
     def download_news(self):
         """Download news from the website to the download directory."""
 
-    def load_page_source(self):
-        return requests.get(self.DOWNLOAD_URL).text
-
 
 class SeleniumNewsDownloader(NewsDownloader):
     """Downloads the news using Selenium to bypass security issues."""
@@ -76,23 +73,21 @@ class SeleniumNewsDownloader(NewsDownloader):
         except WebDriverException:
             return False
 
-    def load_page_source(self):
-        with self._web_driver:
-            self._web_driver.get(self.DOWNLOAD_URL)
-            source = self._web_driver.page_source
-        return source
-
 
 class BBCNewsDownloader(NewsDownloader):
     """Downloads articles from BBC main web page and saves them as HTML files."""
     DOWNLOAD_URL = 'http://bbc.com'
 
     def download_news(self):
-        page_source = requests.get(self.DOWNLOAD_URL)
+        page_source = requests.get(self.DOWNLOAD_URL).text
         soup = BeautifulSoup(page_source, common.WEB_SCRAPPING_PARSER)
-        all_article_tags = soup.find_all(name='a', attrs={'class': 'block-link__overlay-link'})
+        all_article_tags = soup.find_all(name='a', attrs={'class': 'block-link__overlay-link',
+                                                          'href': self._is_news_article_url,
+                                                          'rev': self._is_rev_of_article})
         for tag in all_article_tags:
-            self._download_article_from_html_tag(tag)
+            parent_tag_classes = tag.parent['class']
+            if parent_tag_classes is None or 'media--icon' not in ''.join(parent_tag_classes):
+                self._download_article_from_html_tag(tag)
 
     def _download_article_from_html_tag(self, article_tag):
         """
@@ -101,9 +96,18 @@ class BBCNewsDownloader(NewsDownloader):
         article_url = article_tag['href']
         if article_url.endswith('/'):
             article_url = article_url[:-1]
-
         urllib.urlretrieve(self._get_article_full_url(article_url),
                            self._get_article_download_destination(article_url))
+
+    def _is_news_article_url(self, article_url):
+        return article_url.startswith('/news') or 'bbc.com/news' in article_url
+
+    def _is_rev_of_article(self, rev_html_attribute):
+        return rev_html_attribute is None or 'video' not in rev_html_attribute
+
+    def _should_download_url(self, article_url):
+        is_news_url = article_url.startswith('/news') or 'bbc.com/news' in article_url
+        return is_news_url
 
     def _get_article_download_destination(self, tag_url):
         article_id = tag_url[tag_url.rfind('/') + 1:]

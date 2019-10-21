@@ -1,14 +1,9 @@
 import abc
-import collections
 
 from bs4 import BeautifulSoup
 
 from newscollector import common
 from newscollector.raw_news import BBCRawArticle, FlightLandingUpdate
-
-FlightData = collections.namedtuple('FlightData',
-                                    ['number', 'flight_from', 'planned_time', 'updated_time',
-                                     'terminal', 'status'])
 
 
 class NewsExtractor(object):
@@ -88,9 +83,3 @@ class FlightLandingScheduleExtractor(NewsExtractor):
         if logo_image_tag:
             return logo_image_tag['alt'].strip()
         return flight_company_element_tag.find(name='span', attrs={'class': 'noIcon'}).text.strip()
-
-
-if __name__ == '__main__':
-    all_schedules = FlightLandingScheduleExtractor(
-        '/Users/tamir/PycharmProjects/newscollector/newscollector/output/flights_schedule_2019-10-20 23:06:28.387212.html').extract_raw_news()
-    print all_schedules[0].to_dict()

@@ -5,6 +5,8 @@ from conf import DOWNLOAD_MATERIAL_DIR, RAW_MATERIAL_DIR
 
 
 def main():
+    if not os.path.exists(RAW_MATERIAL_DIR):
+        os.mkdir(RAW_MATERIAL_DIR)
     for download_news_file_name in os.listdir(DOWNLOAD_MATERIAL_DIR):
         download_news_file_path = os.path.join(DOWNLOAD_MATERIAL_DIR, download_news_file_name)
         raw_news = BBCNewsExtractor(download_news_file_path).extract_raw_news()[0]
