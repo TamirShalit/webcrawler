@@ -1,6 +1,6 @@
 import abc
 import json
-import os
+from datetime import datetime
 
 
 class RawNews(object):
@@ -14,14 +14,6 @@ class RawNews(object):
     @abc.abstractmethod
     def load(cls, file_path):
         """Load RawNews from a file."""
-
-    @classmethod
-    def load_directory(cls, directory_path):
-        """Load RawNews from all files in a directory."""
-        all_file_paths = []
-        for file_name in os.listdir(directory_path):
-            all_file_paths.append(os.path.join(directory_path, file_name))
-        return [cls.load(file_path) for file_path in all_file_paths]
 
 
 class JsonRawNews(RawNews):
@@ -96,7 +88,8 @@ class BBCRawArticle(RawNews):
         return '\n'.join(all_text_chapters)
 
 
-class BenGurionFlightUpdate(JsonRawNews):
+class FlightLandingUpdate(JsonRawNews):
+    SCHEDULE_UPDATE_TIME_FIELD = 'schedule_update_time'
     COMPANY_FIELD = 'company'
     FLIGHT_NUMBER_FIELD = 'number'
     FLIGHT_FROM_FIELD = 'from'
@@ -105,8 +98,11 @@ class BenGurionFlightUpdate(JsonRawNews):
     TERMINAL_FIELD = 'terminal'
     STATUS_FIELD = 'status'
 
-    def __init__(self, company, flight_number, flight_from, planned_time, updated_time, terminal,
-                 status):
+    SCHEDULE_TIME_FORMAT = '%Y-%m-%d %H:%M'
+
+    def __init__(self, schedule_update_time, company, flight_number, flight_from, planned_time,
+                 updated_time, terminal, status):
+        self._schedule_update_time = schedule_update_time
         self._company = company
         self._flight_number = flight_number
         self._flight_from = flight_from
@@ -114,6 +110,10 @@ class BenGurionFlightUpdate(JsonRawNews):
         self._updated_time = updated_time
         self._terminal = terminal
         self._status = status
+
+    @property
+    def schedule_update_time(self):
+        return self._schedule_update_time
 
     @property
     def company(self):
@@ -144,7 +144,9 @@ class BenGurionFlightUpdate(JsonRawNews):
         return self._status
 
     def to_dict(self):
-        return {self.COMPANY_FIELD: self.company,
+        return {self.SCHEDULE_UPDATE_TIME_FIELD: datetime.strftime(self.schedule_update_time,
+                                                                   self.SCHEDULE_TIME_FORMAT),
+                self.COMPANY_FIELD: self.company,
                 self.FLIGHT_NUMBER_FIELD: self.flight_number,
                 self.FLIGHT_FROM_FIELD: self.flight_from,
                 self.PLANNED_TIME_FIELD: self.planned_time,
@@ -153,7 +155,12 @@ class BenGurionFlightUpdate(JsonRawNews):
 
     @classmethod
     def from_dict(cls, dictionary):
-        return cls(dictionary[cls.COMPANY_FIELD], dictionary[cls.FLIGHT_NUMBER_FIELD],
+        return cls(datetime.strptime(dictionary[cls.SCHEDULE_UPDATE_TIME_FIELD],
+                                     cls.SCHEDULE_TIME_FORMAT),
+                   dictionary[cls.COMPANY_FIELD],
+                   dictionary[cls.FLIGHT_NUMBER_FIELD],
                    dictionary[cls.FLIGHT_FROM_FIELD],
-                   dictionary[cls.PLANNED_TIME_FIELD], dictionary[cls.UPDATED_TIME_FIELD],
-                   dictionary[cls.TERMINAL_FIELD], dictionary[cls.STATUS_FIELD])
+                   dictionary[cls.PLANNED_TIME_FIELD],
+                   dictionary[cls.UPDATED_TIME_FIELD],
+                   dictionary[cls.TERMINAL_FIELD],
+                   dictionary[cls.STATUS_FIELD])

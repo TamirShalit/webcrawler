@@ -4,7 +4,7 @@ import collections
 from bs4 import BeautifulSoup
 
 from newscollector import common
-from newscollector.raw_news import BBCRawArticle, BenGurionFlightUpdate
+from newscollector.raw_news import BBCRawArticle, FlightLandingUpdate
 
 FlightData = collections.namedtuple('FlightData',
                                     ['number', 'flight_from', 'planned_time', 'updated_time',
@@ -58,26 +58,28 @@ class BBCNewsExtractor(NewsExtractor):
         return [BBCRawArticle(article_header, article_introduction, article_paragraphs)]
 
 
-class BenGurionAirportScheduleExtractor(NewsExtractor):
-
+class FlightLandingScheduleExtractor(NewsExtractor):
     def extract_raw_news(self):
         soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)
-        all_flights_tags = soup.find_all(name='tr', attrs={'class': ['odd', 'even']})[1:]
-        return [self._extract_flight_schedule(tag) for tag in all_flights_tags]
+        schedule_update_message = soup.find(id=common.AIRPORT_SCHEDULE_UPDATE_TAG_ID).text
+        schedule_update_time = common.extract_airport_schedule_update_time(schedule_update_message)
+        all_landing_tags = soup.find_all(name='tr', attrs={'class': ['odd', 'even']})[1:]
+        return [self._extract_landing_update(tag, schedule_update_time) for tag in all_landing_tags]
 
     @classmethod
-    def _extract_flight_schedule(cls, flight_html_row):
-        flight_company = cls._extract_flight_company(flight_html_row)
-        flight_number = flight_html_row.find(name='td', attrs={'class': 'FlightNum'}).text.strip()
-        flight_from = flight_html_row.find(name='td', attrs={'class': 'FlightFrom'}).find(
+    def _extract_landing_update(cls, landing_html_row, schedule_update_time):
+        flight_company = cls._extract_flight_company(landing_html_row)
+        flight_number = landing_html_row.find(name='td', attrs={'class': 'FlightNum'}).text.strip()
+        flight_from = landing_html_row.find(name='td', attrs={'class': 'FlightFrom'}).find(
             'span').text.strip()
-        planned_time = flight_html_row.find(name='td', attrs={'class': 'FlightTime'}).text.strip()
-        updated_time = flight_html_row.find(name='td', attrs={'class': 'finalTime'}).text.strip()
-        local_terminal = int(flight_html_row.find(name='td', attrs={'class': 'localTerminal'}).text)
-        status = flight_html_row.find(name='td', attrs={'class': 'status'}).find('div').text.strip()
-        return BenGurionFlightUpdate(flight_company, flight_number, flight_from, planned_time,
-                                     updated_time,
-                                     local_terminal, status)
+        planned_time = landing_html_row.find(name='td', attrs={'class': 'FlightTime'}).text.strip()
+        updated_time = landing_html_row.find(name='td', attrs={'class': 'finalTime'}).text.strip()
+        local_terminal = int(
+            landing_html_row.find(name='td', attrs={'class': 'localTerminal'}).text)
+        status = landing_html_row.find(name='td', attrs={'class': 'status'}).find(
+            'div').text.strip()
+        return FlightLandingUpdate(schedule_update_time, flight_company, flight_number, flight_from,
+                                   planned_time, updated_time, local_terminal, status)
 
     @staticmethod
     def _extract_flight_company(flight_html_row):
@@ -89,6 +91,6 @@ class BenGurionAirportScheduleExtractor(NewsExtractor):
 
 
 if __name__ == '__main__':
-    all_schedules = BenGurionAirportScheduleExtractor(
+    all_schedules = FlightLandingScheduleExtractor(
         '/Users/tamir/PycharmProjects/newscollector/newscollector/output/flights_schedule_2019-10-20 23:06:28.387212.html').extract_raw_news()
     print all_schedules[0].to_dict()

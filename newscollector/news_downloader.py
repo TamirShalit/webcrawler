@@ -1,10 +1,9 @@
 import abc
+import datetime
 import os
-import re
 import time
 import urllib
 import urlparse
-import datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -127,8 +126,6 @@ class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
     SECONDS_BETWEEN_SCHEDULE_UPDATES = 60 * 5
     SECONDS_TO_WAIT_FOR_SCHEDULE_LOADING = 10
 
-    _HOUR_REGEX = r'([01]\d|2[0-3]):[0-5]\d'
-
     def __init__(self, download_directory, web_driver_location, driver_type=webdriver.Chrome):
         super(FlightLandingScheduleDownloader, self).__init__(download_directory,
                                                               web_driver_location, driver_type)
@@ -173,16 +170,11 @@ class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
             last_update_message = WebDriverWait(self._web_driver,
                                                 self.SECONDS_TO_WAIT_FOR_SCHEDULE_LOADING).until(
                 expected_conditions.presence_of_element_located(
-                    (By.ID, 'ctl00_rptIncomingFlights_ctl00_pInformationStatusMessage'))).text
+                    (By.ID, common.AIRPORT_SCHEDULE_UPDATE_TAG_ID))).text
         except TimeoutException:
             self._web_driver.close()
             raise
-
-        current_datetime = datetime.datetime.now()
-        year, month, day = current_datetime.year, current_datetime.month, current_datetime.day
-        last_update_hour_string = re.search(self._HOUR_REGEX, last_update_message).group(0)
-        hour, seconds = map(int, last_update_hour_string.split(':'))
-        return datetime.datetime(year, month, day, hour, seconds)
+        return common.extract_airport_schedule_update_time(last_update_message)
 
     def _write_schedule_file(self, page_source):
         download_file_name = 'flights_schedule_{update_time}.html'.format(
