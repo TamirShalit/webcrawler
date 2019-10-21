@@ -1,5 +1,9 @@
+from newscollector.news_downloader import BenGurionAirportScheduleDownloader
+
+# Configure it to your Selenium chrome driver location.
+CHROME_DRIVER_LOCATION = '/Users/tamir/Downloads/chromedriver'
+
 if __name__ == '__main__':
-    # BBCNewsDownloader('/Users/tamir/temp').download_news()
-    BenGurionAirportScheduleDownloader(
-        '/Users/tamir/PycharmProjects/newscollector/newscollector/output',
-        '/Users/tamir/Downloads/chromedriver').download_news_perpetually()
+    print 'Downloading flight schedule perpetually. Type Ctrl + C to stop.'
+    BenGurionAirportScheduleDownloader('./schedule_pages',
+                                       CHROME_DRIVER_LOCATION).download_news_perpetually()
