@@ -1,0 +1,36 @@
+1) Project setup - .gitignore, setup.py etc.
+
+2) Very basic idea for design
+
+3) Inspect BBC page and think of a technical solution - web scrapping
+Found that the common attribute for all article links (a tags) the HTML class "block-link__overlay-link"
+
+4) Learn required technologies - in this case web scrapping with BeautifulSoup
+
+5) POC for BBC download (without classes or OOP consideration)
+
+6) Technical solution + POC for flights download (similar process to the one for BBC news).
+
+7) Search for common behavior/attributes in downloaders + think of better design
+
+8) Refactor according to 7th step conclusions
+
+9) Repeat steps 5-8 for extracting, saving and searching modules
+
+10) Write example usage = manual tests for the whole process
+
+11) Run test and fix code when a bug appears (repeat until all is fixed)
+
+12) Go through code and assignment instructions to see if anything is missing.
+
+
+
+Struggles:
+When calling flight page from, got "Request unsuccessful. Incapsula incident ID: ..."
+Solved by using Selenium to extract source (so that the website won't think I'm a robot)
+
+Using 4 separate modules.
+Functionally, this could have been done by 3 modules - Download, Extract to file, and search;
+Solved by adding functionality of serialization of news, which seems redundant, but theoretically
+can be better used by future search analyzers. e.g. search content only in JSON values without keys,
+search headers of articles, search in header and introduction etc.
