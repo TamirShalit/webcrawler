@@ -34,11 +34,7 @@ class NewsExtractor(object):
 
 
 class BBCNewsExtractor(NewsExtractor):
-    @staticmethod
-    def _is_class_name_of_article_content(html_tag_class_name):
-        return html_tag_class_name is None or (
-                html_tag_class_name != 'story-body__introduction' and
-                'twite' not in html_tag_class_name)
+    """Extracts `BBCRawArticle` from an HTML file of an article downloaded from BBC website."""
 
     def extract_raw_news(self):
         soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)
@@ -52,8 +48,16 @@ class BBCNewsExtractor(NewsExtractor):
         article_paragraphs = [tag.text for tag in article_paragraph_tags]
         return [BBCRawArticle(article_header, article_introduction, article_paragraphs)]
 
+    @staticmethod
+    def _is_class_name_of_article_content(html_tag_class_name):
+        return html_tag_class_name is None or (
+                html_tag_class_name != 'story-body__introduction' and
+                'twite' not in html_tag_class_name)
+
 
 class FlightLandingScheduleExtractor(NewsExtractor):
+    """Extracts `FlightLandingUpdate` objects from a single HTML file of landing schedule."""
+
     def extract_raw_news(self):
         soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)
         schedule_update_message = soup.find(id=common.AIRPORT_SCHEDULE_UPDATE_TAG_ID).text

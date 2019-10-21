@@ -1,4 +1,3 @@
-# coding=utf-8
 import tabulate
 
 from newscollector import analyzers, utils

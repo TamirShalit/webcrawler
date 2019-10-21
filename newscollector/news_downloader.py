@@ -140,6 +140,10 @@ class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
         page_source = self._web_driver.page_source
         self._time_of_last_update_downloaded = update_time
         self._write_schedule_file(page_source)
+        # next_button = self._web_driver.find_element_by_id('ctl00_rptPaging_ctl06_aNext')
+        # next_button.click()
+        # self._write_schedule_file(page_source)
+        # next_button.click()
         self.ensure_page_is_closed()
 
     @property

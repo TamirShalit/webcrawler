@@ -9,9 +9,7 @@ LANDING_UPDATE_FILENAME_FORMAT = 'landing_update_flight_{{flight_number}}_{date_
 
 def save_landing_updates_to_directory(landing_updates, directory_path):
     """
-    :param landing_updates:
-    :type landing_updates: list[FlightLandingUpdate]
-    :param directory_path:
+    Dump landing updates to directory, using file-names which contain data from the landing update.
     """
     for landing_update in landing_updates:
         landing_update_filename = \
@@ -28,9 +26,9 @@ def load_raw_news_from_files(news_type, file_paths):
 
 def get_most_recent_landing_updates(landing_updates):
     """
-    :param landing_updates:
     :type landing_updates: list[FlightLandingUpdate]
-    :return:
+    :return: Most recent landing update for each flight in given updates.
+    :rtype list[FlightLandingUpdate]
     """
     most_recent_landing_updates = {}
     for landing_update in landing_updates:

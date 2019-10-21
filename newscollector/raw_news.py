@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class RawNews(object):
+    """Serializable object which contains raw data of news."""
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
@@ -13,22 +14,24 @@ class RawNews(object):
     @classmethod
     @abc.abstractmethod
     def load(cls, file_path):
-        """Load RawNews from a file."""
+        """Load news from a file."""
 
 
 class JsonRawNews(RawNews):
+    """`RawNews` that can be serialized into JSON."""
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def to_dict(self):
         """
+        :return: Dictionary of the news that can be simply serialized to JSON via `json.load`.
         :rtype: dict
         """
 
     @classmethod
     @abc.abstractmethod
     def from_dict(cls, dictionary):
-        pass
+        """Create a JsonRawNews from a JSON-like compatible dictionary"""
 
     def dump(self, file_path):
         with open(file_path, 'w') as output_file:
@@ -85,7 +88,7 @@ class BBCRawArticle(RawNews):
     def to_text(self):
         """
         Convert news to a raw text for the use of analyzers.
-        :rtype: str
+        :rtype: basestring
         """
         all_text_chapters = [self.header, self.introduction] + self.paragraphs
         return '\n'.join(all_text_chapters)
@@ -116,6 +119,10 @@ class FlightLandingUpdate(JsonRawNews):
 
     @property
     def schedule_update_time(self):
+        """
+        :return: When the Airport's landing schedule was updated before downloading this update.
+        :rtype: datetime
+        """
         return self._schedule_update_time
 
     @property
