@@ -3,35 +3,35 @@ import json
 from datetime import datetime
 
 
-class RawNews(object):
-    """Serializable object which contains raw data of news."""
+class RawMaterial(object):
+    """Serializable object which contains raw material (after extraction)."""
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def dump(self, file_path):
-        """Dump the news to a file."""
+        """Dump the material to a file."""
 
     @classmethod
     @abc.abstractmethod
     def load(cls, file_path):
-        """Load news from a file."""
+        """Load material from a file."""
 
 
-class JsonRawNews(RawNews):
-    """`RawNews` that can be serialized into JSON."""
+class JsonRawMaterial(RawMaterial):
+    """`RawMaterial` that can be serialized into JSON."""
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def to_dict(self):
         """
-        :return: Dictionary of the news that can be simply serialized to JSON via `json.load`.
+        :return: Dictionary of the material that can be simply serialized to JSON via `json.load`.
         :rtype: dict
         """
 
     @classmethod
     @abc.abstractmethod
     def from_dict(cls, dictionary):
-        """Create a JsonRawNews from a JSON-like compatible dictionary"""
+        """Create a JsonRawMaterial from a JSON-like compatible dictionary"""
 
     def dump(self, file_path):
         with open(file_path, 'w') as output_file:
@@ -46,7 +46,8 @@ class JsonRawNews(RawNews):
         return str(self.to_dict())
 
 
-class BBCRawArticle(RawNews):
+class BBCRawArticle(RawMaterial):
+    """Contains raw data of a BBC article."""
     END_OF_HEADER = '\n--------END-OF-HEADER----------\n'
     END_OF_INTRODUCTION = '\n--------END-OF-INTRODUCTION----------\n'
     END_OF_PARAGRAPH = '\n--------END-OF-PARAGRAPH----------\n'
@@ -87,14 +88,15 @@ class BBCRawArticle(RawNews):
 
     def to_text(self):
         """
-        Convert news to a raw text for the use of analyzers.
+        Convert material to a raw text for the use of analyzers.
         :rtype: basestring
         """
         all_text_chapters = [self.header, self.introduction] + self.paragraphs
         return '\n'.join(all_text_chapters)
 
 
-class FlightLandingUpdate(JsonRawNews):
+class FlightLandingUpdate(JsonRawMaterial):
+    """Contains raw data of a single flight landing update."""
     SCHEDULE_UPDATE_TIME_FIELD = 'schedule_update_time'
     COMPANY_FIELD = 'company'
     FLIGHT_NUMBER_FIELD = 'number'

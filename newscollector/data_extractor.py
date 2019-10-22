@@ -3,41 +3,41 @@ import abc
 from bs4 import BeautifulSoup
 
 from newscollector import common
-from newscollector.raw_news import BBCRawArticle, FlightLandingUpdate
+from newscollector.raw_material import BBCRawArticle, FlightLandingUpdate
 
 
-class NewsExtractor(object):
-    """Extracts relevant raw data from downloaded news files."""
+class MaterialExtractor(object):
+    """Extracts relevant raw data from downloaded files."""
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, news_file_path):
-        self.news_file_path = news_file_path
-        self._news_file_content = ''
+    def __init__(self, downloaded_file_path):
+        self.downloaded_file_path = downloaded_file_path
+        self._file_content = ''
 
     @property
-    def news_file_content(self):
-        if self._news_file_content:
-            return self._news_file_content
-        with open(self.news_file_path) as news_file:
-            return news_file.read()
+    def downloaded_file_content(self):
+        if self._file_content:
+            return self._file_content
+        with open(self.downloaded_file_path) as downloaded_file:
+            return downloaded_file.read()
 
-    def reload_news_file(self):
-        self._news_file_content = ''
-        return self.news_file_content
+    def reload_file(self):
+        self._file_content = ''
+        return self.downloaded_file_content
 
     @abc.abstractmethod
-    def extract_raw_news(self):
+    def extract_raw_material(self):
         """
-        Extract raw news from news file.
-        :rtype: list[newscollector.raw_news.RawNews]
+        Extract raw material from downloaded file.
+        :rtype: list[newscollector.raw_material.RawMaterial]
         """
 
 
-class BBCNewsExtractor(NewsExtractor):
+class BBCNewsExtractor(MaterialExtractor):
     """Extracts `BBCRawArticle` from an HTML file of an article downloaded from BBC website."""
 
-    def extract_raw_news(self):
-        soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)
+    def extract_raw_material(self):
+        soup = BeautifulSoup(self.downloaded_file_content, common.WEB_SCRAPPING_PARSER)
         story_body = soup.find(name='div', attrs={'class': 'story-body'})
         article_header = story_body.find(name='h1', attrs={'class': 'story-body__h1'}).text
         article_introduction = story_body.find(name='p',
@@ -55,11 +55,11 @@ class BBCNewsExtractor(NewsExtractor):
                 'twite' not in html_tag_class_name)
 
 
-class FlightLandingScheduleExtractor(NewsExtractor):
+class FlightLandingScheduleExtractor(MaterialExtractor):
     """Extracts `FlightLandingUpdate` objects from a single HTML file of landing schedule."""
 
-    def extract_raw_news(self):
-        soup = BeautifulSoup(self.news_file_content, common.WEB_SCRAPPING_PARSER)
+    def extract_raw_material(self):
+        soup = BeautifulSoup(self.downloaded_file_content, common.WEB_SCRAPPING_PARSER)
         schedule_update_message = soup.find(id=common.AIRPORT_SCHEDULE_UPDATE_TAG_ID).text
         schedule_update_time = common.extract_airport_schedule_update_time(schedule_update_message)
         all_landing_tags = soup.find_all(name='tr', attrs={'class': ['odd', 'even']})[1:]

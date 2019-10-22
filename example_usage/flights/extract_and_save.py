@@ -2,7 +2,7 @@ import os
 
 from conf import SCHEDULE_DIRECTORY, RAW_MATERIAL_DIR
 from newscollector import utils
-from newscollector.news_extractor import FlightLandingScheduleExtractor
+from newscollector.data_extractor import FlightLandingScheduleExtractor
 
 
 def main():
@@ -10,7 +10,7 @@ def main():
         os.mkdir(RAW_MATERIAL_DIR)
     for schedule_file_name in os.listdir(SCHEDULE_DIRECTORY):
         schedule_file_path = os.path.join(SCHEDULE_DIRECTORY, schedule_file_name)
-        landing_updates = FlightLandingScheduleExtractor(schedule_file_path).extract_raw_news()
+        landing_updates = FlightLandingScheduleExtractor(schedule_file_path).extract_raw_material()
         utils.save_landing_updates_to_directory(landing_updates, RAW_MATERIAL_DIR)
 
 

@@ -16,8 +16,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from newscollector import common
 
 
-class NewsDownloader(object):
-    """Downloads data from news website to a directory."""
+class DataDownloader(object):
+    """Downloads data of a certain type from website to a directory."""
     __metaclass__ = abc.ABCMeta
 
     DOWNLOAD_URL = ''
@@ -26,12 +26,12 @@ class NewsDownloader(object):
         self.download_directory = download_directory
 
     @abc.abstractmethod
-    def download_news(self):
-        """Download news from the website to the download directory."""
+    def download_data(self):
+        """Download data from the website to the download directory."""
 
 
-class SeleniumNewsDownloader(NewsDownloader):
-    """Downloads the news using Selenium to bypass security issues."""
+class SeleniumDataDownloader(DataDownloader):
+    """Downloads the data using Selenium to bypass security issues."""
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, download_directory, web_driver_location, driver_type=webdriver.Chrome):
@@ -39,7 +39,7 @@ class SeleniumNewsDownloader(NewsDownloader):
         :param web_driver_location: Location of the web-driver file.
         :param driver_type: Class of Selenium web-driver to use.
         """
-        super(SeleniumNewsDownloader, self).__init__(download_directory)
+        super(SeleniumDataDownloader, self).__init__(download_directory)
         self._driver_type = driver_type
         self._web_driver_location = web_driver_location
         self._web_driver = None
@@ -68,11 +68,11 @@ class SeleniumNewsDownloader(NewsDownloader):
             return False
 
 
-class BBCNewsDownloader(NewsDownloader):
+class BBCNewsDownloader(DataDownloader):
     """Downloads articles from BBC main web page and saves them as HTML files."""
     DOWNLOAD_URL = 'http://bbc.com'
 
-    def download_news(self):
+    def download_data(self):
         page_source = requests.get(self.DOWNLOAD_URL).text
         soup = BeautifulSoup(page_source, common.WEB_SCRAPPING_PARSER)
         all_article_tags = soup.find_all(name='a', attrs={'class': 'block-link__overlay-link',
@@ -116,7 +116,7 @@ class BBCNewsDownloader(NewsDownloader):
         return article_full_url
 
 
-class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
+class FlightLandingScheduleDownloader(SeleniumDataDownloader):
     """
     Downloads real-time schedule of flight landings from Ben-Gurion airport.
     """
@@ -133,7 +133,7 @@ class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
                                                               web_driver_location, driver_type)
         self._time_of_last_update_downloaded = None
 
-    def download_news(self):
+    def download_data(self):
         update_time = self._wait_for_schedule_update_time()
         self._time_of_last_update_downloaded = update_time
         self._write_schedule_file(self._web_driver.page_source, 1)
@@ -158,15 +158,15 @@ class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
             raise
         next_button.click()
 
-    def download_news_perpetually(self):
+    def download_data_perpetually(self):
         if self.time_of_last_update_downloaded is None:
-            self.download_news()
+            self.download_data()
             time.sleep(self.expected_seconds_to_next_update)
         current_schedule_update_time = self._wait_for_schedule_update_time()
         while True:
             while current_schedule_update_time < self.time_of_last_update_downloaded:
                 current_schedule_update_time = self._wait_for_schedule_update_time()
-            self.download_news()
+            self.download_data()
             time.sleep(self.expected_seconds_to_next_update)
             current_schedule_update_time = self._wait_for_schedule_update_time()
 

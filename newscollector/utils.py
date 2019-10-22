@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from newscollector.raw_news import FlightLandingUpdate
+from newscollector.raw_material import FlightLandingUpdate
 
 LANDING_UPDATE_FILENAME_FORMAT = 'landing_update_flight_{{flight_number}}_{date_format}.json' \
     .format(date_format=FlightLandingUpdate.SCHEDULE_TIME_FORMAT)
@@ -20,8 +20,8 @@ def save_landing_updates_to_directory(landing_updates, directory_path):
         landing_update.dump(landing_update_file_path)
 
 
-def load_raw_news_from_files(news_type, file_paths):
-    return [news_type.load(file_path) for file_path in file_paths]
+def load_raw_material_from_files(material_type, file_paths):
+    return [material_type.load(file_path) for file_path in file_paths]
 
 
 def get_most_recent_landing_updates(landing_updates):
