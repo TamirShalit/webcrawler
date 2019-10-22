@@ -4,6 +4,7 @@ import os
 import time
 import urllib
 import urlparse
+import warnings
 
 import requests
 from bs4 import BeautifulSoup
@@ -44,7 +45,8 @@ class SeleniumDataDownloader(DataDownloader):
         self._web_driver_location = web_driver_location
         self._web_driver = None
 
-    def ensure_page_is_open(self):
+    def ensure_driver_is_open(self):
+        """Open web driver if not already open"""
         if not self.is_driver_open:
             if self._web_driver is not None:
                 # Clean everything left from last driver session.
@@ -52,7 +54,8 @@ class SeleniumDataDownloader(DataDownloader):
             self._web_driver = self._driver_type(self._web_driver_location)
             self._web_driver.get(self.DOWNLOAD_URL)
 
-    def ensure_page_is_closed(self):
+    def ensure_driver_is_closed(self):
+        """Close driver if not already closed."""
         if self.is_driver_open:
             self._web_driver.close()
 
@@ -85,7 +88,7 @@ class BBCNewsDownloader(DataDownloader):
 
     def _download_article_from_html_tag(self, article_tag):
         """
-        :param bs4.Tag article_tag: BeatifulSoup tag with link to the article.
+        :param bs4.Tag article_tag: BeatifulSoup tag with link to the article to download.
         """
         article_url = article_tag['href']
         if article_url.endswith('/'):
@@ -93,15 +96,18 @@ class BBCNewsDownloader(DataDownloader):
         urllib.urlretrieve(self._get_article_full_url(article_url),
                            self._get_article_download_destination(article_url))
 
-    def _is_news_article_url(self, article_url):
-        return article_url.startswith('/news') or 'bbc.com/news' in article_url
+    @staticmethod
+    def _is_news_article_url(article_url):
+        """
+        Return whether the URL represents a URL of a standard news article (not media/video/live).
+        """
+        is_news_section = article_url.startswith('/news') or 'bbc.com/news' in article_url
+        is_non_media_article = '/news/av/' not in article_url and '/news/live/' not in article_url
+        return is_news_section and is_non_media_article
 
-    def _is_rev_of_article(self, rev_html_attribute):
+    @staticmethod
+    def _is_rev_of_article(rev_html_attribute):
         return rev_html_attribute is None or 'video' not in rev_html_attribute
-
-    def _should_download_url(self, article_url):
-        is_news_url = article_url.startswith('/news') or 'bbc.com/news' in article_url
-        return is_news_url
 
     def _get_article_download_destination(self, tag_url):
         article_id = tag_url[tag_url.rfind('/') + 1:]
@@ -141,11 +147,30 @@ class FlightLandingScheduleDownloader(SeleniumDataDownloader):
             self._web_driver.find_element_by_id(self._NEXT_PAGE_BUTTON_ID).click()
             time.sleep(self._SECONDS_TO_WAIT_BETWEEN_PAGE_TOGGLE)
             self._write_schedule_file(self._web_driver.page_source, page_number)
-        self.ensure_page_is_closed()
+        self.ensure_driver_is_closed()
 
     @property
-    def time_of_last_update_downloaded(self):
+    def last_schedule_update_time(self):
+        """
+        Time when latest schedule downloaded was updated.
+        :rtype: datetime.datetime
+        """
         return self._time_of_last_update_downloaded
+
+    @property
+    def expected_seconds_to_next_update(self):
+        """
+        Expected time left for next schedule update in seconds (schedule updates every
+        `SECONDS_BETWEEN_SCHEDULE_UPDATES` seconds.
+
+        :rtype: int
+        """
+        time_passed_since_last_update = datetime.datetime.now() - \
+                                        self.last_schedule_update_time
+        time_left_for_next_update = (datetime.timedelta(
+            seconds=self.SECONDS_BETWEEN_SCHEDULE_UPDATES) - time_passed_since_last_update)
+        seconds_to_next_update = time_left_for_next_update.total_seconds()
+        return seconds_to_next_update if seconds_to_next_update > 0 else 0
 
     def _click_on_next_page(self):
         try:
@@ -159,28 +184,27 @@ class FlightLandingScheduleDownloader(SeleniumDataDownloader):
         next_button.click()
 
     def download_data_perpetually(self):
-        if self.time_of_last_update_downloaded is None:
+        if self.last_schedule_update_time is None:
             self.download_data()
             time.sleep(self.expected_seconds_to_next_update)
         current_schedule_update_time = self._wait_for_schedule_update_time()
         while True:
-            while current_schedule_update_time < self.time_of_last_update_downloaded:
+            try:
+                while current_schedule_update_time < self.last_schedule_update_time:
+                    current_schedule_update_time = self._wait_for_schedule_update_time()
+                self.download_data()
+                time.sleep(self.expected_seconds_to_next_update)
                 current_schedule_update_time = self._wait_for_schedule_update_time()
-            self.download_data()
-            time.sleep(self.expected_seconds_to_next_update)
-            current_schedule_update_time = self._wait_for_schedule_update_time()
-
-    @property
-    def expected_seconds_to_next_update(self):
-        time_passed_since_last_update = datetime.datetime.now() - \
-                                        self.time_of_last_update_downloaded
-        time_left_for_next_update = (datetime.timedelta(
-            seconds=self.SECONDS_BETWEEN_SCHEDULE_UPDATES) - time_passed_since_last_update)
-        seconds_to_next_update = time_left_for_next_update.total_seconds()
-        return seconds_to_next_update if seconds_to_next_update > 0 else 0
+            except TimeoutException:
+                warnings.warn('Could not download flights schedule. Date: %s' %
+                              datetime.datetime.now())
 
     def _wait_for_schedule_update_time(self):
-        self.ensure_page_is_open()
+        """
+        Wait until schedule update time is presented in the webpage and return it as
+        datetime.datetime object.
+        """
+        self.ensure_driver_is_open()
         try:
             last_update_message = WebDriverWait(self._web_driver,
                                                 self.SECONDS_TO_WAIT_FOR_SCHEDULE_LOADING).until(
@@ -192,8 +216,9 @@ class FlightLandingScheduleDownloader(SeleniumDataDownloader):
         return common.extract_airport_schedule_update_time(last_update_message)
 
     def _write_schedule_file(self, page_source, page_number):
+        """Write schedule page source to the download directory (download schedule file)."""
         download_file_name = 'flights_schedule_page{page_number}_{update_time}.html'.format(
-            page_number=page_number, update_time=self.time_of_last_update_downloaded)
+            page_number=page_number, update_time=self.last_schedule_update_time)
         download_file_path = os.path.join(self.download_directory, download_file_name)
         with open(download_file_path, 'w') as download_file:
             download_file.write(page_source.encode('utf-8'))
