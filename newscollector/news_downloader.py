@@ -45,7 +45,7 @@ class SeleniumNewsDownloader(NewsDownloader):
         self._web_driver = None
 
     def ensure_page_is_open(self):
-        if not self.is_page_open:
+        if not self.is_driver_open:
             if self._web_driver is not None:
                 # Clean everything left from last driver session.
                 self._web_driver.quit()
@@ -53,19 +53,13 @@ class SeleniumNewsDownloader(NewsDownloader):
             self._web_driver.get(self.DOWNLOAD_URL)
 
     def ensure_page_is_closed(self):
-        if self.is_page_open:
-            self._web_driver.quit()
-
-    @property
-    def is_page_open(self):
-        try:
-            return self._web_driver is not None and \
-                   self._web_driver.current_url == self.DOWNLOAD_URL
-        except WebDriverException:
-            return False
+        if self.is_driver_open:
+            self._web_driver.close()
 
     @property
     def is_driver_open(self):
+        if self._web_driver is None:
+            return False
         try:
             # noinspection PyStatementEffect
             self._web_driver.current_url
@@ -129,6 +123,10 @@ class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
     DOWNLOAD_URL = 'http://www.iaa.gov.il/he-IL/airports/BenGurion/Pages/OnlineFlights.aspx'
     SECONDS_BETWEEN_SCHEDULE_UPDATES = 60 * 5
     SECONDS_TO_WAIT_FOR_SCHEDULE_LOADING = 10
+    NUMBER_OF_SCHEDULE_PAGES_TO_DOWNLOAD = 3
+
+    _NEXT_PAGE_BUTTON_ID = 'ctl00_rptPaging_ctl06_aNext'
+    _SECONDS_TO_WAIT_BETWEEN_PAGE_TOGGLE = 1
 
     def __init__(self, download_directory, web_driver_location, driver_type=webdriver.Chrome):
         super(FlightLandingScheduleDownloader, self).__init__(download_directory,
@@ -137,24 +135,33 @@ class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
 
     def download_news(self):
         update_time = self._wait_for_schedule_update_time()
-        page_source = self._web_driver.page_source
         self._time_of_last_update_downloaded = update_time
-        self._write_schedule_file(page_source)
-        # next_button = self._web_driver.find_element_by_id('ctl00_rptPaging_ctl06_aNext')
-        # next_button.click()
-        # self._write_schedule_file(page_source)
-        # next_button.click()
+        self._write_schedule_file(self._web_driver.page_source, 1)
+        for page_number in xrange(2, self.NUMBER_OF_SCHEDULE_PAGES_TO_DOWNLOAD + 1):
+            self._web_driver.find_element_by_id(self._NEXT_PAGE_BUTTON_ID).click()
+            time.sleep(self._SECONDS_TO_WAIT_BETWEEN_PAGE_TOGGLE)
+            self._write_schedule_file(self._web_driver.page_source, page_number)
         self.ensure_page_is_closed()
 
     @property
     def time_of_last_update_downloaded(self):
         return self._time_of_last_update_downloaded
 
+    def _click_on_next_page(self):
+        try:
+            next_button = WebDriverWait(self._web_driver,
+                                        self.SECONDS_TO_WAIT_FOR_SCHEDULE_LOADING).until(
+                expected_conditions.presence_of_element_located(
+                    (By.ID, self._NEXT_PAGE_BUTTON_ID)))
+        except TimeoutException:
+            self._web_driver.close()
+            raise
+        next_button.click()
+
     def download_news_perpetually(self):
         if self.time_of_last_update_downloaded is None:
             self.download_news()
             time.sleep(self.expected_seconds_to_next_update)
-        self._web_driver.refresh()
         current_schedule_update_time = self._wait_for_schedule_update_time()
         while True:
             while current_schedule_update_time < self.time_of_last_update_downloaded:
@@ -184,9 +191,9 @@ class FlightLandingScheduleDownloader(SeleniumNewsDownloader):
             raise
         return common.extract_airport_schedule_update_time(last_update_message)
 
-    def _write_schedule_file(self, page_source):
-        download_file_name = 'flights_schedule_{update_time}.html'.format(
-            update_time=self.time_of_last_update_downloaded)
+    def _write_schedule_file(self, page_source, page_number):
+        download_file_name = 'flights_schedule_page{page_number}_{update_time}.html'.format(
+            page_number=page_number, update_time=self.time_of_last_update_downloaded)
         download_file_path = os.path.join(self.download_directory, download_file_name)
         with open(download_file_path, 'w') as download_file:
             download_file.write(page_source.encode('utf-8'))
