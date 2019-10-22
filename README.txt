@@ -34,3 +34,10 @@ analyzers.py contains functions that perform analysis on raw material.
 So far analyzer only perform analysis on files' text only, but one can implement analyzers that work
 directly with `RawMaterial` objects and/or can perform other analysis, e.g. search for text only in
 BBC article headers, search for delayed flights etc.
+
+
+utils.py contains extra manipulations that are not given out of the box by the above
+classes/modules.
+Current functions are for the use of this assignment example usage.
+
+common.py contains variable/functions common to more than one module.
