@@ -1,9 +1,17 @@
 Read work process in work_process.txt
+Works on python 2.7
+
+Installation:
+------------------
+Open terminal in project directory.
+pip install -e .
+
 
 Run Code:
 -------------------
 
 To run and test modules, go to example_usage/bcc and example_usage/flights.
+In example_usage/flights, change `CHROME_DRIVER_LOCATION` to the location of your chrome driver.
 First execute download module, then extract + save module, then search module.
 
 After first download you can re-extract without dependency on the download module.
