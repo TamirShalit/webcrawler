@@ -1,6 +1,6 @@
 import os
 
-from newscollector.data_extractor import BBCNewsExtractor
+from webcrawler.data_extractor import BBCNewsExtractor
 from conf import DOWNLOAD_MATERIAL_DIR, RAW_MATERIAL_DIR
 
 

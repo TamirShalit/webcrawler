@@ -2,8 +2,8 @@ import abc
 
 from bs4 import BeautifulSoup
 
-from newscollector import common
-from newscollector.raw_material import BBCRawArticle, FlightLandingUpdate
+from webcrawler import common
+from webcrawler.raw_material import BBCRawArticle, FlightLandingUpdate
 
 
 class MaterialExtractor(object):

@@ -1,6 +1,6 @@
 import os
 
-from newscollector.downloader import FlightLandingScheduleDownloader
+from webcrawler.downloader import FlightLandingScheduleDownloader
 from conf import SCHEDULE_DIRECTORY, CHROME_DRIVER_LOCATION
 
 

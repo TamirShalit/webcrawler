@@ -1,7 +1,7 @@
 import tabulate
 
-from newscollector import analyzers, utils
-from newscollector.raw_material import FlightLandingUpdate
+from webcrawler import analyzers, utils
+from webcrawler.raw_material import FlightLandingUpdate
 
 from conf import RAW_MATERIAL_DIR, SEARCHED_WORD
 

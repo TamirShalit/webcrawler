@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from newscollector.raw_material import FlightLandingUpdate
+from webcrawler.raw_material import FlightLandingUpdate
 
 LANDING_UPDATE_FILENAME_FORMAT = 'landing_update_flight_{{flight_number}}_{date_format}.json' \
     .format(date_format=FlightLandingUpdate.SCHEDULE_TIME_FORMAT)

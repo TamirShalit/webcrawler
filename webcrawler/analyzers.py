@@ -1,6 +1,6 @@
 import os
 
-from newscollector.raw_material import JsonRawMaterial
+from webcrawler.raw_material import JsonRawMaterial
 
 
 def _get_lowered_list(iterable):

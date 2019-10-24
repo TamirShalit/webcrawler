@@ -1,6 +1,6 @@
 from conf import RAW_MATERIAL_DIR, SEARCHED_WORD
-from newscollector import analyzers
-from newscollector.raw_material import BBCRawArticle
+from webcrawler import analyzers
+from webcrawler.raw_material import BBCRawArticle
 
 
 def main():

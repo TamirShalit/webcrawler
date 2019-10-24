@@ -1,8 +1,8 @@
 import os
 
 from conf import SCHEDULE_DIRECTORY, RAW_MATERIAL_DIR
-from newscollector import utils
-from newscollector.data_extractor import FlightLandingScheduleExtractor
+from webcrawler import utils
+from webcrawler.data_extractor import FlightLandingScheduleExtractor
 
 
 def main():

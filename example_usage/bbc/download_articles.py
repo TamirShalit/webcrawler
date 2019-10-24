@@ -1,6 +1,6 @@
 import os
 
-from newscollector.downloader import BBCNewsDownloader
+from webcrawler.downloader import BBCNewsDownloader
 from conf import DOWNLOAD_MATERIAL_DIR
 
 if __name__ == '__main__':
