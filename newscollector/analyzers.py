@@ -14,13 +14,7 @@ def _get_lowered_list(iterable):
 
 
 def has_text(raw_material, text, case_sensitive=False):
-    """
-    Wh
-    :param raw_material:
-    :param text:
-    :param case_sensitive:
-    :return:
-    """
+    """Whether the material contains a certian text."""
     if not case_sensitive:
         text = text.lower()
     if hasattr(raw_material, 'to_text'):
