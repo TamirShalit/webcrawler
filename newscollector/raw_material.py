@@ -18,7 +18,7 @@ class RawMaterial(object):
 
 
 class JsonRawMaterial(RawMaterial):
-    """`RawMaterial` that can be serialized into JSON."""
+    """`RawMaterial` that can be serialized from and into JSON."""
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
