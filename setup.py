@@ -7,5 +7,5 @@ setup(
     install_requires=['beautifulsoup4', 'requests', 'selenium', 'tabulate'],
     author='Tamir Shalit',
     author_email='shalit.tamir@gmail.com',
-    description='Download, extraction and analysis of data from news websites'
+    description='Download, extraction and analysis of data from websites'
 )
